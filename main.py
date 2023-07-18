@@ -25,7 +25,11 @@ def import_json_to_csv(json_file_path: Path, csv_file_path: Path):
         data = json.load(json_file)
 
     # Getting column headers from the first record
-    headers = list(data[0].keys())
+    try:
+        headers = list(data[0].keys())
+    except IndexError:
+        print("Input file is empty")
+        return
 
     # Writing data to a CSV file
     with csv_file_path.open('w', newline='') as csv_file:
