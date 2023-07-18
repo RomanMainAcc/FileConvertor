@@ -37,7 +37,11 @@ def convert_file(input_file: Path, output_file: Path, input_format: str, output_
             json.dump(data, file, indent=4)
 
     elif output_format == FileFormat.CSV:
-        headers = list(data[0].keys())
+        try:
+            headers = list(data[0].keys())
+        except IndexError:
+            print("Input file is empty")
+            return
         with open(output_file, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(headers)
@@ -56,7 +60,11 @@ def convert_file(input_file: Path, output_file: Path, input_format: str, output_
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
+    parser.description = "Supported formats:\n     - .csv\n     - .json\n     - .yaml"
 
     # Positional
 
@@ -89,16 +97,7 @@ def main():
 
     convert_file(intput_path, output_path, input_file_extension, output_file_extension)
 
-    # if input_file_extension == FileFormat.CSV:
-    #     convert_csv_to_json(intput_path, output_path)
-    #
-    # elif input_file_extension == FileFormat.JSON:
-    #     import_json_to_csv(intput_path, output_path)
-    #
-    # else:
-    #     print("Unsupported file format")
-    #     return
-
 
 if __name__ == '__main__':
     main()
+
