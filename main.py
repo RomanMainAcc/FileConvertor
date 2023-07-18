@@ -1,5 +1,6 @@
 import csv
 import json
+import yaml
 import argparse
 from pathlib import Path
 from enum import StrEnum
@@ -8,38 +9,50 @@ from enum import StrEnum
 class FileFormat(StrEnum):
     CSV = '.csv'
     JSON = '.json'
+    YAML = '.yaml'
 
 
-def convert_csv_to_json(csv_file: Path, json_file: Path):
-    with csv_file.open('r') as file:
-        csv_data = csv.DictReader(file)
-        data = [row for row in csv_data]
+def convert_file(input_file: Path, output_file: Path, input_format: str, output_format: str):
+    # Input file format specification
+    if input_format == FileFormat.JSON:
+        with open(input_file, 'r') as file:
+            data = json.load(file)
 
-    with json_file.open('w') as file:
-        json.dump(data, file, indent=4)
+    elif input_format == FileFormat.CSV:
+        with open(input_file, 'r') as file:
+            reader = csv.DictReader(file)
+            data = [row for row in reader]
 
+    elif input_format == FileFormat.YAML:
+        with open(input_file, 'r') as file:
+            data = yaml.safe_load(file)
 
-def import_json_to_csv(json_file_path: Path, csv_file_path: Path):
-    # Loading data from a JSON file
-    with json_file_path.open('r') as json_file:
-        data = json.load(json_file)
-
-    # Getting column headers from the first record
-    try:
-        headers = list(data[0].keys())
-    except IndexError:
-        print("Input file is empty")
+    else:
+        print('Unsupported input format')
         return
 
-    # Writing data to a CSV file
-    with csv_file_path.open('w', newline='') as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=headers)
+    # Convert data to the original format
+    if output_format == FileFormat.JSON:
+        with open(output_file, 'w') as file:
+            json.dump(data, file, indent=4)
 
-        # Recording column headers
-        writer.writeheader()
+    elif output_format == FileFormat.CSV:
+        headers = list(data[0].keys())
+        with open(output_file, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(headers)
+            for row in data:
+                writer.writerow(list(row.values()))
 
-        # Data recording
-        writer.writerows(data)
+    elif output_format == FileFormat.YAML:
+        with open(output_file, 'w') as file:
+            yaml.dump(data, file)
+
+    else:
+        print('Unsupported output format')
+        return
+
+    print('Conversion completed successfully')
 
 
 def main():
@@ -74,15 +87,17 @@ def main():
 
     output_path.parent.mkdir(parents=args.parents, exist_ok=True)
 
-    if input_file_extension == FileFormat.CSV:
-        convert_csv_to_json(intput_path, output_path)
+    convert_file(intput_path, output_path, input_file_extension, output_file_extension)
 
-    elif input_file_extension == FileFormat.JSON:
-        import_json_to_csv(intput_path, output_path)
-
-    else:
-        print("Unsupported file format")
-        return
+    # if input_file_extension == FileFormat.CSV:
+    #     convert_csv_to_json(intput_path, output_path)
+    #
+    # elif input_file_extension == FileFormat.JSON:
+    #     import_json_to_csv(intput_path, output_path)
+    #
+    # else:
+    #     print("Unsupported file format")
+    #     return
 
 
 if __name__ == '__main__':
