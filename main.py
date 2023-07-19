@@ -72,9 +72,9 @@ class YamlConvertor(Convertor):
 
 
 CONVERTERS = {
-    FileFormat.JSON: JsonConvertor(),
-    FileFormat.CSV: CsvConvertor(),
-    FileFormat.YAML: YamlConvertor(),
+    FileFormat.JSON: JsonConvertor,
+    FileFormat.CSV: CsvConvertor,
+    FileFormat.YAML: YamlConvertor,
 }
 
 
