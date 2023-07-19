@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import csv
 import json
 import yaml
@@ -12,51 +13,69 @@ class FileFormat(StrEnum):
     YAML = '.yaml'
 
 
-def convert_file(input_file: Path, output_file: Path, input_format: str, output_format: str):
-    # Input file format specification
-    if input_format == FileFormat.JSON:
-        with open(input_file, 'r') as file:
-            data = json.load(file)
+class Convertor(ABC):
+    @classmethod
+    @abstractmethod
+    def read(cls, filepath: Path) -> list[dict]:
+        pass
 
-    elif input_format == FileFormat.CSV:
-        with open(input_file, 'r') as file:
-            reader = csv.DictReader(file)
-            data = [row for row in reader]
+    @classmethod
+    @abstractmethod
+    def write(cls, data: list[dict], filepath: Path):
+        pass
 
-    elif input_format == FileFormat.YAML:
-        with open(input_file, 'r') as file:
-            data = yaml.safe_load(file)
 
-    else:
-        print('Unsupported input format')
-        return
+class JsonConvertor(Convertor):
+    @classmethod
+    def read(cls, filepath: Path) -> list[dict]:
+        with open(filepath, 'r') as file:
+            return json.load(file)
 
-    # Convert data to the original format
-    if output_format == FileFormat.JSON:
-        with open(output_file, 'w') as file:
+    @classmethod
+    def write(cls, data: list[dict], filepath: Path):
+        with open(filepath, 'w') as file:
             json.dump(data, file, indent=4)
 
-    elif output_format == FileFormat.CSV:
+
+class CsvConvertor(Convertor):
+    @classmethod
+    def read(cls, filepath: Path) -> list[dict]:
+        with open(filepath, 'r') as file:
+            reader = csv.DictReader(file)
+            return [row for row in reader]
+
+    @classmethod
+    def write(cls, data: list[dict], filepath: Path):
         try:
             headers = list(data[0].keys())
         except IndexError:
             print("Input file is empty")
             return
-        with open(output_file, 'w', newline='') as file:
+
+        with open(filepath, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(headers)
             for row in data:
                 writer.writerow(list(row.values()))
 
-    elif output_format == FileFormat.YAML:
-        with open(output_file, 'w') as file:
+
+class YamlConvertor(Convertor):
+    @classmethod
+    def read(cls, filepath: Path) -> list[dict]:
+        with open(filepath, 'r') as file:
+            return yaml.safe_load(file)
+
+    @classmethod
+    def write(cls, data: list[dict], filepath: Path):
+        with open(filepath, 'w') as file:
             yaml.dump(data, file)
 
-    else:
-        print('Unsupported output format')
-        return
 
-    print('Conversion completed successfully')
+CONVERTERS = {
+    FileFormat.JSON: JsonConvertor(),
+    FileFormat.CSV: CsvConvertor(),
+    FileFormat.YAML: YamlConvertor(),
+}
 
 
 def main():
@@ -95,7 +114,10 @@ def main():
 
     output_path.parent.mkdir(parents=args.parents, exist_ok=True)
 
-    convert_file(intput_path, output_path, input_file_extension, output_file_extension)
+    input_format_convertor = CONVERTERS[input_file_extension]
+    output_format_convertor = CONVERTERS[output_file_extension]
+
+    output_format_convertor.write(input_format_convertor.read(intput_path), output_path)
 
 
 if __name__ == '__main__':
