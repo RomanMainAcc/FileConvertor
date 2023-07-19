@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 import csv
 import json
-import yaml
 import argparse
 from pathlib import Path
 from enum import StrEnum
+
+import yaml
 
 
 class FileFormat(StrEnum):
@@ -53,10 +54,8 @@ class CsvConvertor(Convertor):
             return
 
         with open(filepath, 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(headers)
-            for row in data:
-                writer.writerow(list(row.values()))
+            writer = csv.DictWriter(file, headers)
+            writer.writerows(data)
 
 
 class YamlConvertor(Convertor):
